@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'graphql/client'
-require 'graphql/client/http'
+require "graphql/client"
+require "graphql/client/http"
 
 module Shopify
   # Service for interacting with Shopify Storefront API
@@ -10,7 +10,7 @@ module Shopify
     HTTP = GraphQL::Client::HTTP.new("https://#{ENV.fetch('SHOPIFY_SHOP_DOMAIN')}/api/2023-10/graphql.json") do
       def headers(_context)
         {
-          "X-Shopify-Storefront-Access-Token" => ENV.fetch('SHOPIFY_STOREFRONT_ACCESS_TOKEN'),
+          "X-Shopify-Storefront-Access-Token" => ENV.fetch("SHOPIFY_STOREFRONT_ACCESS_TOKEN"),
           "Content-Type" => "application/json"
         }
       end
@@ -45,6 +45,29 @@ module Shopify
         return []
       end
       response.data.products.edges.map(&:node)
+    end
+
+    # Fetch a single product by handle
+    ProductByHandleQuery = Client.parse <<-'GRAPHQL'
+      query($handle: String!) {
+        productByHandle(handle: $handle) {
+          id
+          title
+          handle
+          descriptionHtml
+          images(first: 5) { edges { node { url altText } } }
+          priceRange { minVariantPrice { amount currencyCode } }
+        }
+      }
+    GRAPHQL
+
+    def self.fetch_product_by_handle(handle)
+      response = Client.query(ProductByHandleQuery, variables: { handle: handle })
+      if response.errors.any?
+        Rails.logger.error("Shopify Storefront API errors: #{response.errors.messages}")
+        return nil
+      end
+      response.data.product_by_handle
     end
   end
 end
