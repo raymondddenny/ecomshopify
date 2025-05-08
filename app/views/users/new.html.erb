@@ -1,0 +1,37 @@
+<div class="max-w-md mx-auto mt-12 bg-gray-900 p-8 rounded-xl shadow-xl">
+  <h1 class="text-3xl font-bold mb-6 text-white">Sign Up</h1>
+  <%= form_with model: @user, url: users_path, local: true, class: "flex flex-col gap-4" do |f| %>
+    <div>
+      <%= f.label :email, class: "block text-white font-semibold mb-1" %>
+      <%= f.email_field :email, class: "w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:ring-blue-500 focus:border-blue-500" %>
+    </div>
+    <div class="flex gap-4">
+      <div class="w-1/2">
+        <%= f.label :first_name, class: "block text-white font-semibold mb-1" %>
+        <%= f.text_field :first_name, class: "w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:ring-blue-500 focus:border-blue-500" %>
+      </div>
+      <div class="w-1/2">
+        <%= f.label :last_name, class: "block text-white font-semibold mb-1" %>
+        <%= f.text_field :last_name, class: "w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:ring-blue-500 focus:border-blue-500" %>
+      </div>
+    </div>
+    <div>
+      <%= f.label :tags, class: "block text-white font-semibold mb-1" %>
+      <%= f.text_field :tags, placeholder: "Comma separated (VIP,Newsletter)", class: "w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:ring-blue-500 focus:border-blue-500" %>
+      <span class="text-xs text-gray-400">(Optional: Will be synced to Shopify customer tags)</span>
+    </div>
+    <div>
+      <%= f.label :password, class: "block text-white font-semibold mb-1" %>
+      <%= f.password_field :password, class: "w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:ring-blue-500 focus:border-blue-500" %>
+    </div>
+    <div>
+      <%= f.label :password_confirmation, class: "block text-white font-semibold mb-1" %>
+      <%= f.password_field :password_confirmation, class: "w-full px-3 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:ring-blue-500 focus:border-blue-500" %>
+    </div>
+    <%= f.submit "Sign Up", class: "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4" %>
+  <% end %>
+  <div class="mt-4 text-center">
+    <span class="text-gray-400">Already have an account?</span>
+    <%= link_to "Log in", login_path, class: "text-blue-400 hover:underline ml-2" %>
+  </div>
+</div>

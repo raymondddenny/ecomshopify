@@ -20,7 +20,7 @@ gem "tailwindcss-rails"
 gem "jbuilder"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-# gem "bcrypt", "~> 3.1.7"
+gem "bcrypt", "~> 3.1.7"
 
 gem "dotenv-rails", groups: [ :development, :test ]
 
@@ -70,3 +70,5 @@ group :test do
 end
 
 gem "tailwindcss-ruby", "~> 4.1"
+
+gem "httparty", "~> 0.23.1"

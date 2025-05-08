@@ -63,95 +63,45 @@ Build a **headless Shopify storefront** using the latest **Ruby on Rails** and *
 
 - Clean, minimal layout
 - Hero section with call-to-action
-- Customer testimonials (with quotes/photos)
-- Product highlights or service breakdowns
-- Scroll-triggered animations
-- Social proof (counts, likes, shares, etc.)
-- Customizable via CMS (optional phase 2)
-
-Example structure:
-```html
-<section class="hero">...</section>
-<section class="testimonials">...</section>
-<section class="features">...</section>
-<section class="call-to-action">...</section>
-```
+- Testimonials
+- Modular, reusable sections
 
 ---
 
-## ⚠️ Considerations
+## 🚦 Status & Recent Updates
 
-### ❗ Shopify Limitations
-- Shopify analytics, fraud checks, and abandoned cart recovery are not supported
-- You must manually implement:
-  - Discounts
-  - Tax rules
-  - Shipping rate calculations
-  - Currency formatting
-
-### 🔐 PCI Compliance
-- Mayar.id handles all payment data
-- Do not store card details
-- Secure webhook implementation is required
+### May 2025
+- **Cart Functionality:**
+  - Enhanced cart query to include product variant, SKU, image, attributes, and cost details.
+  - Improved error handling for cart operations.
+  - UI updated to use `featuredImage` and robust price/currency handling to avoid GraphQL unfetched field errors.
+  - Duplicate mutation issues resolved in the service layer.
+- **Product Listing:**
+  - Product catalog and detail pages are functional.
 
 ---
 
-## 🧾 Implementation Checklist
+## ⏭️ Next Steps
 
-### 📁 Rails Setup
-- [ ] Initialize new Rails app with Tailwind CSS
-- [ ] Install Tailwind UI / Heroicons for pre-built components
-- [ ] Shopify API integration using `http` or `graphql-client`
-- [ ] Mayar.id SDK or custom integration
+1. **Checkout & Payment Integration**
+   - Implement custom checkout UI to collect customer info, shipping, and discounts.
+   - Integrate Mayar.id payment (redirect/iframe).
+   - Handle Mayar.id webhook to trigger Shopify Admin API order creation (idempotent, secure).
 
-### 🔗 Shopify Integration
-- [ ] Product listing & cart logic using Storefront API
-- [ ] Order creation with Admin API
+2. **Order Creation**
+   - On payment success, create Shopify order via Admin API.
+   - Store order/payment metadata for future reference.
 
-### 💳 Mayar.id Payment
-- [ ] Redirect or embed flow
-- [ ] Secure payment callback handling
-- [ ] Create Shopify order post-payment
+3. **Landing Page Enhancements**
+   - Build modular hero, testimonial, and CTA sections using Tailwind.
+   - Ensure responsiveness and SEO best practices.
 
-### 🎨 Landing Page UI
-- [ ] Hero component with dynamic product or CTA
-- [ ] Testimonial slider or grid
-- [ ] Scroll-based animation (AOS or Alpine.js)
-- [ ] Responsive Tailwind layout
-- [ ] Optional: Markdown or YAML-driven content blocks
+4. **Testing & QA**
+   - Test full cart > checkout > payment > order flow.
+   - Add edge case handling for sold-out products, invalid payments, etc.
 
----
-
-## 🚀 Fly.io Deployment
-
-### Setup
-1. Install CLI: `flyctl auth login`
-2. Init app: `flyctl launch`
-3. Set secrets:
-   ```bash
-   flyctl secrets set SHOPIFY_API_KEY=... MAYAR_API_KEY=...
-   ```
-4. Deploy:
-   ```bash
-   flyctl deploy
-   ```
-5. Optional: Set autoscale & region
-   ```bash
-   flyctl scale count 2
-   flyctl regions add sin
-   ```
-
----
-
-## 📅 Project Timeline
-
-| Week | Milestone                                  |
-|------|--------------------------------------------|
-| 1    | Rails + Tailwind setup, Shopify API keys   |
-| 2    | Product listing, cart management           |
-| 3    | Checkout logic + Mayar.id integration      |
-| 4    | Landing page UI, testimonials, hero        |
-| 5    | Testing, deploy to Fly.io with Windsurf IDE|
+5. **Deployment**
+   - Prepare and test Fly.io deployment with secrets/configuration for Shopify and Mayar.id.
 
 ---
 

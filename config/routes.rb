@@ -1,4 +1,13 @@
 Rails.application.routes.draw do
+  get "checkout/new"
+  get "checkout/create"
+  resources :users, only: [:new, :create]
+  get 'signup', to: 'users#new', as: :signup
+
+  resources :sessions, only: [:new, :create, :destroy]
+  get 'login', to: 'sessions#new', as: :login
+  post 'login', to: 'sessions#create'
+  delete 'logout', to: 'sessions#destroy', as: :logout
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -22,6 +31,6 @@ Rails.application.routes.draw do
   delete 'cart/remove', to: 'cart#remove', as: :cart_remove
   delete 'cart/clear', to: 'cart#clear', as: :cart_clear
 
-  # Example checkout route (implement as needed)
-  get 'checkout', to: 'cart#checkout', as: :checkout
+  # Checkout routes
+  match 'checkout', to: 'cart#checkout', via: [:get, :post], as: :checkout
 end

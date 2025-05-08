@@ -28,6 +28,13 @@
         </span>
         <div class="w-full">
           <div class="flex flex-col items-center gap-4 w-full">
+            <%# Flash message for errors or notices %>
+            <% if flash[:alert] || flash[:notice] %>
+              <div class="w-full mb-4 px-4 py-2 rounded shadow text-center font-semibold
+                <%= flash[:alert] ? 'bg-red-600 text-white' : 'bg-green-600 text-white' %>">
+                <%= flash[:alert] || flash[:notice] %>
+              </div>
+            <% end %>
             <%= form_with url: cart_add_path, method: :post, local: true, class: 'flex flex-col items-center gap-4 w-full' do |f| %>
               <label for="quantity" class="block text-sm font-medium mb-1 self-start">Quantity:</label>
               <div class="flex items-center bg-gray-900 rounded-lg border border-gray-700 w-full max-w-xs">
@@ -37,8 +44,53 @@
   style: 'appearance: none; -webkit-appearance: none; -moz-appearance: textfield; box-shadow: none; width:100%;' %>
                 <button type="button" onclick="var q=document.getElementById('qty-input'); q.value=+q.value+1;" class="px-3 py-2 rounded-r-lg bg-gray-800 text-white text-lg font-bold focus:outline-none hover:bg-gray-700" aria-label="Increase quantity">+</button>
               </div>
-              <%= hidden_field_tag :product_id, @product.id %>
-              <%= f.submit 'Add to Cart', class: "w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-bold text-base shadow transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" %>
+              <% if @product.variants&.edges&.size.to_i > 1 %>
+                <%# Render variant pickers for each option %>
+                 <% option_names = @product.options&.map(&:name) || [] %>
+                 <% variant_data = @product.variants.edges.map { |v| { id: v.node.id, options: v.node.selected_options.map { |o| [o.name, o.value] }.to_h } } %>
+                 <div id="variant-pickers" class="w-full mb-2 flex flex-col gap-2">
+                   <% option_names.each do |option_name| %>
+                     <label for="variant-option-<%= option_name.parameterize %>" class="block text-sm font-medium text-white mb-1"><%= option_name %>:</label>
+<div class="relative">
+                     <select id="variant-option-<%= option_name.parameterize %>" name="variant_option[<%= option_name %>]" class="flowbite-select block w-full p-2.5 bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                     <% @product.options.find { |opt| opt.name == option_name }.values.each do |value| %>
+                         <option value="<%= value %>"><%= value %></option>
+    <% end %>
+  </select>
+</div>
+                   <% end %>
+                 </div>
+                 <%= hidden_field_tag :variant_id, variant_data.first[:id], id: "variant-id-field" %>
+                 <script>
+                   document.addEventListener('DOMContentLoaded', function() {
+                     function updateVariantId() {
+                       var variantData = <%= raw variant_data.to_json %>;
+                       var selectors = <%= raw option_names.map { |n| "variant-option-#{n.parameterize}" }.to_json %>;
+                       var selected = {};
+                       selectors.forEach(function(sel, idx) {
+                         var el = document.getElementById(sel);
+                         if (el) selected[option_names[idx]] = el.value;
+                       });
+                       var found = variantData.find(function(v) {
+                         return Object.entries(v.options).every(function([k, vOpt]) {
+                           return selected[k] === vOpt;
+                         });
+                       });
+                       if (found) {
+                         document.getElementById('variant-id-field').value = found.id;
+                       }
+                     }
+                     var optionSelectors = <%= raw option_names.map { |n| "variant-option-#{n.parameterize}" }.to_json %>;
+                     optionSelectors.forEach(function(sel) {
+                       var el = document.getElementById(sel);
+                       if (el) el.addEventListener('change', updateVariantId);
+                     });
+                   });
+                 </script>
+               <% else %>
+                 <%= hidden_field_tag :variant_id, @product.variants&.edges&.first&.node&.id || @product.id %>
+               <% end %>
+               <%= f.submit 'Add to Cart', class: "w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-bold text-base shadow transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2" %>
             <% end %>
             <%= form_with url: buy_now_path, method: :post, local: true, class: 'w-full' do |f| %>
               <%= hidden_field_tag :product_id, @product.id %>

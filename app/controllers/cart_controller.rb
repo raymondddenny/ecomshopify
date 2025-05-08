@@ -2,11 +2,29 @@ class CartController < ApplicationController
   include CartSession
 
   def add
-    product_id = params[:product_id]
+    variant_id = params[:variant_id] || params[:product_id] # fallback for now
     quantity = params[:quantity].to_i
     quantity = 1 if quantity < 1
-    add_to_cart(product_id, quantity)
-    flash[:notice] = "Added to cart."
+
+    if session[:shopify_cart_id].present?
+      result = Shopify::StorefrontService.add_lines_to_cart(
+        cart_id: session[:shopify_cart_id],
+        variant_id: variant_id,
+        quantity: quantity
+      )
+    else
+      result = Shopify::StorefrontService.create_cart(
+        variant_id: variant_id,
+        quantity: quantity
+      )
+      session[:shopify_cart_id] = result[:cart_id] if result
+    end
+
+    if result
+      flash[:notice] = "Added to cart."
+    else
+      flash[:alert] = "There was a problem adding to cart."
+    end
     redirect_back fallback_location: products_path
   end
 
@@ -20,34 +38,160 @@ class CartController < ApplicationController
   end
 
   def checkout
-    # Placeholder for checkout logic
-    # You can access session[:buy_now] here
+    if request.post?
+      # Extract checkout params
+      # Auto-format phone to E.164 for Indonesia
+      phone = params[:phone].to_s.strip
+      if phone.start_with?("0") && params[:country].to_s.downcase.include?("indonesia")
+        phone = "+62" + phone[1..]
+      end
+      buyer_identity = {
+        email: params[:email],
+        phone: phone,
+        deliveryAddressPreferences: [
+          {
+            deliveryAddress: {
+              address1: params[:address1],
+              city: params[:city],
+              province: params[:province],
+              country: params[:country],
+              zip: params[:postal_code],
+              firstName: params[:full_name].to_s.split(" ").first,
+              lastName: params[:full_name].to_s.split(" ")[1..]&.join(" ") || ""
+            }
+          }
+        ]
+      }
+      cart_id = session[:shopify_cart_id]
+      if cart_id.blank?
+        redirect_to cart_path, alert: "Cart not found." and return
+      end
+      # Call service to update cart buyer identity via Storefront API
+      result = Shopify::StorefrontService.update_cart_buyer_identity(cart_id, buyer_identity)
+      if result[:success]
+        # --- Create Shopify order via Admin API (payment bypassed, status: pending) ---
+        cart_id = session[:shopify_cart_id]
+        cart = Shopify::StorefrontService.fetch_cart(cart_id)
+        if cart
+          line_items = cart.lines.edges.map do |edge|
+            # Extract numeric variant ID for Admin API
+            graphql_id = edge.node.merchandise.id.to_s
+            numeric_id = graphql_id.split("/").last
+            {
+              variant_id: numeric_id,
+              quantity: edge.node.quantity
+            }
+          end
+          order_payload = {
+            order: {
+              email: params[:email],
+              line_items: line_items,
+              financial_status: 'pending',
+              shipping_address: {
+                address1: params[:address1],
+                city: params[:city],
+                province: params[:province],
+                country: params[:country],
+                zip: params[:postal_code],
+                name: params[:full_name],
+                phone: phone
+              }
+            }
+          }
+          order = Shopify::AdminService.create_order(order_payload)
+          if order
+            flash[:notice] = "Order created in Shopify (pending payment)."
+            # Optionally clear cart
+            session[:shopify_cart_id] = nil
+            redirect_to root_path and return
+          else
+            flash.now[:alert] = "Order creation failed."
+            render :checkout, status: :unprocessable_entity and return
+          end
+        else
+          flash.now[:alert] = "Cart not found for order creation."
+          render :checkout, status: :unprocessable_entity and return
+        end
+      else
+        flash.now[:alert] = result[:error] || "Could not update checkout info."
+        render :checkout, status: :unprocessable_entity
+      end
+    else
+      render :checkout
+    end
   end
 
   # For upcoming cart page
+  before_action :require_login, only: [ :show, :checkout ]
+
   def show
-    @cart_items = cart_items
-    # You will fetch product info for these IDs in the view
+    if session[:shopify_cart_id].present?
+      @cart = Shopify::StorefrontService.fetch_cart(session[:shopify_cart_id])
+      if @cart
+        @cart_items = @cart.lines.edges.map do |edge|
+        line_id = edge.node.id
+        variant_id = edge.node.merchandise.id
+        product = edge.node.merchandise.product
+        quantity = edge.node.quantity
+        price = edge.node.cost.amount_per_quantity.amount.to_f
+        currency = edge.node.cost.amount_per_quantity.currency_code
+        [ line_id, variant_id, quantity, product, price, currency ]
+      end
+      else
+        @cart_items = []
+      end
+    else
+      @cart_items = []
+    end
   end
 
   def update
-    product_id = params[:product_id]
+    line_id = params[:line_id]
     quantity = params[:quantity].to_i
-    set_cart_quantity(product_id, quantity)
+    if session[:shopify_cart_id].present? && line_id.present?
+      Shopify::StorefrontService.update_cart_line(
+        cart_id: session[:shopify_cart_id],
+        line_id: line_id,
+        quantity: quantity
+      )
+    end
     flash[:notice] = "Cart updated."
     redirect_to cart_path
   end
 
   def remove
-    product_id = params[:product_id]
-    remove_from_cart(product_id)
+    line_id = params[:line_id]
+    if session[:shopify_cart_id].present? && line_id.present?
+      Shopify::StorefrontService.remove_cart_lines(
+        cart_id: session[:shopify_cart_id],
+        line_ids: [ line_id ]
+      )
+    end
     flash[:notice] = "Item removed from cart."
     redirect_to cart_path
   end
 
   def clear
-    clear_cart
+    if session[:shopify_cart_id].present?
+      cart = Shopify::StorefrontService.fetch_cart(session[:shopify_cart_id])
+      if cart
+        line_ids = cart.lines.edges.map { |edge| edge.node.id }
+        Shopify::StorefrontService.remove_cart_lines(
+          cart_id: session[:shopify_cart_id],
+          line_ids: line_ids
+        )
+      end
+    end
     flash[:notice] = "Cart cleared."
     redirect_to cart_path
+  end
+
+  private
+
+  def require_login
+    unless session[:user_id] && User.exists?(id: session[:user_id])
+      flash[:alert] = "You must be logged in to access the cart or checkout."
+      redirect_to login_path
+    end
   end
 end
