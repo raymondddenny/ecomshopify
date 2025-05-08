@@ -13,4 +13,15 @@ Rails.application.routes.draw do
   root "products#index"
 
   resources :products, only: [:index, :show]
+
+  post 'cart/add', to: 'cart#add', as: :cart_add
+  post 'cart/buy_now', to: 'cart#buy_now', as: :buy_now
+
+  get 'cart', to: 'cart#show', as: :cart
+  patch 'cart/update', to: 'cart#update', as: :cart_update
+  delete 'cart/remove', to: 'cart#remove', as: :cart_remove
+  delete 'cart/clear', to: 'cart#clear', as: :cart_clear
+
+  # Example checkout route (implement as needed)
+  get 'checkout', to: 'cart#checkout', as: :checkout
 end

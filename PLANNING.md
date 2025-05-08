@@ -51,8 +51,8 @@ Build a **headless Shopify storefront** using the latest **Ruby on Rails** and *
 
 ### 🛒 Commerce
 
-- **Product Listing** via Storefront API
-- **Cart Management** using sessions or localStorage
+- **Product Listing** via Storefront API ✅
+- **Cart Management** using sessions or localStorage ✅ (Session-based cart implemented, including add/buy now logic)
 - **Custom Checkout Flow** with:
   - Customer info
   - Shipping

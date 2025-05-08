@@ -1,0 +1,63 @@
+<%# app/views/cart/show.html.erb %>
+<div class="max-w-3xl mx-auto p-6 bg-gray-900 text-white rounded-xl shadow-xl mt-8">
+  <h1 class="text-3xl font-bold mb-6">Your Cart</h1>
+  <% if @cart_items.present? && @cart_items.any? %>
+    <table class="w-full mb-6">
+      <thead>
+        <tr class="text-left border-b border-gray-700">
+          <th class="py-2">Product</th>
+          <th class="py-2 text-center">Qty</th>
+          <th class="py-2 text-right">Subtotal</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% total = 0 %>
+        <% @cart_items.each do |product_id, quantity| %>
+          <%# Fetch product details (replace with actual lookup in production) %>
+          <% product = Shopify::StorefrontService.fetch_product_by_id(product_id) rescue nil %>
+          <% next unless product %>
+          <% price = product.price_range.min_variant_price.amount.to_f rescue 0 %>
+          <% subtotal = price * quantity %>
+          <% total += subtotal %>
+          <tr class="border-b border-gray-800">
+            <td class="py-3">
+              <div class="flex items-center gap-3">
+                <% if product.images&.edges&.any? %>
+                  <img src="<%= product.images.edges[0].node.url %>" alt="<%= product.title %>" class="w-14 h-14 object-cover rounded" />
+                <% end %>
+                <span class="font-semibold"><%= product.title %></span>
+              </div>
+            </td>
+            <td class="py-3 text-center">
+              <%= form_with url: cart_update_path, method: :patch, local: true, class: "inline-flex" do %>
+                <input type="hidden" name="product_id" value="<%= product_id %>">
+                <input type="number" name="quantity" value="<%= quantity %>" min="1" class="w-16 text-center bg-gray-800 border border-gray-700 text-white rounded focus:ring-blue-500 focus:border-blue-500 px-2 py-1" />
+                <button type="submit" class="ml-2 px-3 py-1 bg-blue-700 hover:bg-blue-800 rounded text-white font-bold">Update</button>
+              <% end %>
+            </td>
+            <td class="py-3 text-right">
+              <%= number_to_currency(subtotal, unit: product.price_range.min_variant_price.currency_code) %>
+            </td>
+            <td class="py-3 text-right">
+              <%= button_to 'Remove', cart_remove_path(product_id: product_id), method: :delete, class: "px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-white font-bold" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <div class="flex justify-between items-center mb-6">
+      <span class="text-xl font-bold">Total:</span>
+      <span class="text-2xl font-extrabold text-green-400"><%= number_to_currency(total, unit: @cart_items.first && Shopify::StorefrontService.fetch_product_by_id(@cart_items.first[0]).price_range.min_variant_price.currency_code rescue "") %></span>
+    </div>
+    <div class="flex gap-4">
+      <%= button_to 'Clear Cart', cart_clear_path, method: :delete, class: "px-6 py-2 bg-gray-700 hover:bg-gray-800 rounded text-white font-bold" %>
+      <%= link_to 'Checkout', checkout_path, class: "px-8 py-2 bg-green-600 hover:bg-green-700 rounded text-white font-bold text-lg" %>
+    </div>
+  <% else %>
+    <div class="text-center py-12">
+      <p class="text-lg text-gray-400 mb-4">Your cart is empty.</p>
+      <%= link_to 'Continue Shopping', products_path, class: "px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-bold" %>
+    </div>
+  <% end %>
+</div>

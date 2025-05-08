@@ -71,5 +71,29 @@ module Shopify
       end
       response.data.product_by_handle
     end
+    # Fetch related/recommended products for a given product ID
+    ProductRecommendationsQuery = Client.parse <<-'GRAPHQL'
+      query($productId: ID!) {
+        productRecommendations(productId: $productId) {
+          id
+          title
+          handle
+          description
+          tags
+          images(first: 1) { edges { node { url altText } } }
+          priceRange { minVariantPrice { amount currencyCode } }
+        }
+      }
+    GRAPHQL
+
+    def self.fetch_product_recommendations(product_id)
+      response = Client.query(ProductRecommendationsQuery, variables: { productId: product_id })
+      Rails.logger.info("Shopify Storefront API: productRecommendations response for #{product_id}: #{response.data.product_recommendations.inspect}")
+      if response.errors.any?
+        Rails.logger.error("Shopify Storefront API errors: #{response.errors.messages}")
+        return []
+      end
+      response.data.product_recommendations
+    end
   end
 end
