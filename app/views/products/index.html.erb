@@ -1,22 +1,134 @@
 <%# app/views/products/index.html.erb %>
-<h1 class="text-2xl font-bold mb-6">Products</h1>
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-  <% @products.each do |product| %>
-    <div class="bg-white rounded-lg shadow p-4 flex flex-col">
-      <% if product.images.edges.any? %>
-        <%= link_to product_path(product.handle) do %>
-          <img src="<%= product.images.edges[0].node.url %>" alt="<%= product.title %>" class="mb-2 rounded object-cover h-40 w-full" />
-        <% end %>
-      <% end %>
-      <h2 class="font-semibold text-lg mb-1">
-        <%= link_to product.title, product_path(product.handle), class: "hover:underline text-blue-700" %>
-      </h2>
-      <p class="text-gray-600 text-sm mb-2"><%= product.description.truncate(80) %></p>
-      <div class="mt-auto">
-        <span class="text-green-600 font-bold">
-          <%= number_to_currency(product.price_range.min_variant_price.amount, unit: product.price_range.min_variant_price.currency_code) %>
-        </span>
-      </div>
-    </div>
-  <% end %>
+<!-- Flowbite Hero Section -->
+<section class="bg-gray-900 bg-[url('https://flowbite.s3.amazonaws.com/docs/jumbotron/hero-pattern-dark.svg')]">
+  <div class="py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16 z-10 relative">
+    <span class="inline-flex items-center py-1 px-3 mb-4 text-xs font-medium text-blue-700 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">Welcome to Our Store</span>
+    <h1 class="mb-4 text-4xl font-extrabold tracking-tight leading-none text-white md:text-5xl lg:text-6xl dark:text-white">Discover Our Bestsellers</h1>
+    <p class="mb-8 text-lg font-normal text-gray-200 lg:text-xl sm:px-16 lg:px-48 dark:text-gray-200">Shop the latest trends and enjoy exclusive deals on top products. Find your favorites and enjoy fast shipping!</p>
+  </div>
+</section>
+
+<!-- Newsletter Signup Banner (Flowbite) -->
+<div id="newsletter-banner" class="flex justify-between w-full p-4 border-b border-gray-800 bg-gray-900">
+  <div class="flex items-center shrink-0 w-full mx-auto sm:w-auto">
+    <form class="flex flex-col items-center w-full md:flex-row">
+      <label for="newsletter-email" class="shrink-0 mb-2 me-auto text-sm font-medium text-gray-200 md:mb-0 md:me-4 dark:text-gray-400 md:m-0">Sign up for our newsletter &amp; get exclusive discounts!</label>
+      <input type="email" id="newsletter-email" placeholder="Enter your email" class="bg-white border border-gray-300 text-white md:w-64 mb-2 md:mb-0 md:me-4 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+      <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Subscribe</button>
+    </form>
+  </div>
 </div>
+
+<!-- Product List with 2-Column Flowbite Cards -->
+<div class="max-w-4xl mx-auto px-2 md:px-0 py-8 bg-gray-900">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <% @products.each do |product| %>
+      <div class="w-full bg-gray-900 border border-gray-800 rounded-lg shadow-md flex flex-col">
+        <% if product.images.edges.any? %>
+          <%= link_to product_path(product.handle), class: "block w-full aspect-[4/3] bg-gray-50 rounded-t-lg overflow-hidden" do %>
+            <img src="<%= product.images.edges[0].node.url %>" alt="<%= product.title %>" class="object-cover w-full h-full" style="aspect-ratio:4/3;" />
+          <% end %>
+        <% end %>
+        <div class="p-4 flex-1 flex flex-col">
+          <h2 class="mb-2 text-lg font-bold tracking-tight text-white dark:text-white truncate">
+            <%= link_to product.title, product_path(product.handle), class: "hover:underline" %>
+          </h2>
+          <div class="flex flex-wrap gap-2 mb-3">
+            <% if product.tags && product.tags.any? %>
+              <% product.tags.first(2).each do |tag| %>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"><%= tag %></span>
+              <% end %>
+            <% else %>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-200 dark:bg-gray-700 dark:text-gray-300">Minimalist</span>
+            <% end %>
+          </div>
+          <span class="block text-green-700 dark:text-green-400 font-bold text-base mb-2">
+            <%= number_to_currency(product.price_range.min_variant_price.amount, unit: product.price_range.min_variant_price.currency_code) %>
+          </span>
+          <%= link_to "View", product_path(product.handle), class: "inline-block mt-auto text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg px-4 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Flowbite Testimonials Section (4 testimonials, 2x2 grid) -->
+<div class="max-w-4xl mx-auto mb-8 border border-gray-800 rounded-lg shadow-md bg-gray-900">
+  <div class="grid md:grid-cols-2">
+    <figure class="flex flex-col items-center justify-center p-8 text-center bg-white border-b border-gray-200 rounded-t-lg md:rounded-t-none md:rounded-ss-lg md:border-e dark:bg-gray-800 dark:border-gray-700">
+      <blockquote class="max-w-2xl mx-auto mb-4 text-gray-200 lg:mb-8 dark:text-gray-400">
+        <h3 class="text-lg font-semibold text-white dark:text-white">Seamless shopping experience!</h3>
+        <p class="my-4">I found everything I needed and checkout was a breeze. Highly recommend this store!</p>
+      </blockquote>
+      <figcaption class="flex items-center justify-center ">
+        <img class="rounded-full w-9 h-9" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/karen-nelson.png" alt="profile picture">
+        <div class="space-y-0.5 font-medium dark:text-white text-left rtl:text-right ms-3">
+          <div>Bonnie Green</div>
+          <div class="text-sm text-gray-200 dark:text-gray-400 ">Jakarta, Indonesia</div>
+        </div>
+      </figcaption>    
+    </figure>
+    <figure class="flex flex-col items-center justify-center p-8 text-center bg-white border-b border-gray-200 rounded-t-lg md:rounded-t-none md:rounded-se-lg dark:bg-gray-800 dark:border-gray-700">
+      <blockquote class="max-w-2xl mx-auto mb-4 text-gray-200 lg:mb-8 dark:text-gray-400">
+        <h3 class="text-lg font-semibold text-white dark:text-white">Great customer service</h3>
+        <p class="my-4">The support team answered my questions quickly and helped me pick the perfect product.</p>
+      </blockquote>
+      <figcaption class="flex items-center justify-center ">
+        <img class="rounded-full w-9 h-9" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/roberta-casas.png" alt="profile picture">
+        <div class="space-y-0.5 font-medium dark:text-white text-left rtl:text-right ms-3">
+          <div>Roberta Casas</div>
+          <div class="text-sm text-gray-200 dark:text-gray-400 ">Bandung, Indonesia</div>
+        </div>
+      </figcaption>    
+    </figure>
+    <figure class="flex flex-col items-center justify-center p-8 text-center bg-white border-b border-gray-200 rounded-t-lg md:rounded-t-none dark:bg-gray-800 dark:border-gray-700">
+      <blockquote class="max-w-2xl mx-auto mb-4 text-gray-200 lg:mb-8 dark:text-gray-400">
+        <h3 class="text-lg font-semibold text-white dark:text-white">Fast delivery and quality products</h3>
+        <p class="my-4">My order arrived quickly and the quality exceeded my expectations. Will shop again!</p>
+      </blockquote>
+      <figcaption class="flex items-center justify-center ">
+        <img class="rounded-full w-9 h-9" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/jese-leos.png" alt="profile picture">
+        <div class="space-y-0.5 font-medium dark:text-white text-left rtl:text-right ms-3">
+          <div>Jese Leos</div>
+          <div class="text-sm text-gray-200 dark:text-gray-400 ">Surabaya, Indonesia</div>
+        </div>
+      </figcaption>    
+    </figure>
+    <figure class="flex flex-col items-center justify-center p-8 text-center bg-white border-b border-gray-200 rounded-t-lg md:rounded-t-none dark:bg-gray-800 dark:border-gray-700">
+      <blockquote class="max-w-2xl mx-auto mb-4 text-gray-200 lg:mb-8 dark:text-gray-400">
+        <h3 class="text-lg font-semibold text-white dark:text-white">Amazing discounts and deals</h3>
+        <p class="my-4">I signed up for the newsletter and got a great discount on my first purchase. Love it!</p>
+      </blockquote>
+      <figcaption class="flex items-center justify-center ">
+        <img class="rounded-full w-9 h-9" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/joseph-mcfall.png" alt="profile picture">
+        <div class="space-y-0.5 font-medium dark:text-white text-left rtl:text-right ms-3">
+          <div>Joseph McFall</div>
+          <div class="text-sm text-gray-200 dark:text-gray-400 ">Medan, Indonesia</div>
+        </div>
+      </figcaption>    
+    </figure>
+  </div>
+</div>
+
+<!-- Flowbite Footer Section -->
+<footer class="bg-gray-900 rounded-none shadow-none mt-8">
+  <div class="w-full max-w-screen-xl mx-auto p-4 md:py-8">
+    <div class="sm:flex sm:items-center sm:justify-between">
+      <a href="/" class="flex items-center mb-4 sm:mb-0">
+        <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">DennCommerce</span>
+      </a>
+      <ul class="flex flex-wrap items-center mb-6 text-sm font-medium text-gray-200 sm:mb-0 dark:text-gray-400">
+        <li><a href="#" class="hover:underline me-4 md:me-6">About</a></li>
+        <li><a href="#" class="hover:underline me-4 md:me-6">Privacy Policy</a></li>
+        <li><a href="#" class="hover:underline me-4 md:me-6">Licensing</a></li>
+        <li><a href="#" class="hover:underline">Contact</a></li>
+      </ul>
+    </div>
+    <hr class="my-6 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-8" />
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+      <span class="block text-sm text-gray-200 sm:text-center dark:text-gray-400">© 2025 DennCommerce™. All Rights Reserved.</span>
+      <span class="block text-sm text-gray-200 sm:text-center dark:text-gray-400 mt-2 sm:mt-0">Jl. Palsu No. 123, Jakarta, Indonesia | info@denncommerce.com</span>
+    </div>
+  </div>
+</footer>
+

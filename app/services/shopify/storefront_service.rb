@@ -30,6 +30,7 @@ module Shopify
               title
               handle
               description
+              tags
               images(first: 1) { edges { node { url } } }
               priceRange { minVariantPrice { amount currencyCode } }
             }
@@ -55,6 +56,7 @@ module Shopify
           title
           handle
           descriptionHtml
+          tags
           images(first: 5) { edges { node { url altText } } }
           priceRange { minVariantPrice { amount currencyCode } }
         }
