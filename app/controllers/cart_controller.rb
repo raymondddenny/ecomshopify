@@ -68,21 +68,21 @@ class CartController < ApplicationController
       }
       cart_id = session[:shopify_cart_id]
       if cart_id.blank?
-        redirect_to cart_path, alert: 'Cart not found.' and return
+        redirect_to cart_path, alert: "Cart not found." and return
       end
       cart = Shopify::StorefrontService.fetch_cart(cart_id)
       if cart.nil?
-        redirect_to cart_path, alert: 'Cart not found.' and return
+        redirect_to cart_path, alert: "Cart not found." and return
       end
 
       # Feature flag: bypass Mayar payment, create Shopify order directly
-      use_direct_shopify_order = true # set to false to re-enable Mayar payment
+      use_direct_shopify_order = false # set to false to re-enable Mayar payment
 
       if use_direct_shopify_order
         # Build Shopify order payload from cart
         line_items = cart.lines.edges.map do |edge|
           {
-            variant_id: edge.node.merchandise.id.split('/').last,
+            variant_id: edge.node.merchandise.id.split("/").last,
             quantity: edge.node.quantity
           }
         end
@@ -112,7 +112,7 @@ class CartController < ApplicationController
           flash[:notice] = "Order created successfully!"
           redirect_to checkout_success_path and return
         else
-          redirect_to cart_path, alert: 'Could not create Shopify order. Please try again.' and return
+          redirect_to cart_path, alert: "Could not create Shopify order. Please try again." and return
         end
       else
         # Build Mayar invoice items from cart
@@ -135,10 +135,10 @@ class CartController < ApplicationController
           expired_at: expired_at,
           items: items
         )
-        if payment_response && payment_response["payment_url"]
-          redirect_to payment_response["payment_url"] and return
+        if payment_response && payment_response["data"]["link"]
+          redirect_to payment_response["data"]["link"], allow_other_host: true and return
         else
-          redirect_to cart_path, alert: 'Could not create payment link. Please try again.' and return
+          redirect_to cart_path, alert: "Could not create payment link. Please try again." and return
         end
       end
       # Call service to update cart buyer identity via Storefront API
@@ -161,7 +161,7 @@ class CartController < ApplicationController
             order: {
               email: params[:email],
               line_items: line_items,
-              financial_status: 'pending',
+              financial_status: "pending",
               shipping_address: {
                 address1: params[:address1],
                 city: params[:city],
