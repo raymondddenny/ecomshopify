@@ -1,6 +1,10 @@
 class CartController < ApplicationController
   include CartSession
 
+  def checkout_success
+    render :checkout_success
+  end
+
   def add
     variant_id = params[:variant_id] || params[:product_id] # fallback for now
     quantity = params[:quantity].to_i
@@ -64,7 +68,78 @@ class CartController < ApplicationController
       }
       cart_id = session[:shopify_cart_id]
       if cart_id.blank?
-        redirect_to cart_path, alert: "Cart not found." and return
+        redirect_to cart_path, alert: 'Cart not found.' and return
+      end
+      cart = Shopify::StorefrontService.fetch_cart(cart_id)
+      if cart.nil?
+        redirect_to cart_path, alert: 'Cart not found.' and return
+      end
+
+      # Feature flag: bypass Mayar payment, create Shopify order directly
+      use_direct_shopify_order = true # set to false to re-enable Mayar payment
+
+      if use_direct_shopify_order
+        # Build Shopify order payload from cart
+        line_items = cart.lines.edges.map do |edge|
+          {
+            variant_id: edge.node.merchandise.id.split('/').last,
+            quantity: edge.node.quantity
+          }
+        end
+        order_payload = {
+          order: {
+            email: params[:email],
+            line_items: line_items,
+            shipping_address: {
+              address1: params[:address1],
+              city: params[:city],
+              province: params[:province],
+              country: params[:country],
+              zip: params[:postal_code],
+              first_name: params[:full_name].to_s.split(" ").first,
+              last_name: params[:full_name].to_s.split(" ")[1..]&.join(" ") || ""
+            },
+            customer: {
+              first_name: params[:full_name].to_s.split(" ").first,
+              last_name: params[:full_name].to_s.split(" ")[1..]&.join(" ") || "",
+              email: params[:email]
+            },
+            financial_status: "paid"
+          }
+        }
+        shopify_order = Shopify::AdminService.create_order(order_payload)
+        if shopify_order
+          flash[:notice] = "Order created successfully!"
+          redirect_to checkout_success_path and return
+        else
+          redirect_to cart_path, alert: 'Could not create Shopify order. Please try again.' and return
+        end
+      else
+        # Build Mayar invoice items from cart
+        items = cart.lines.edges.map do |edge|
+          {
+            quantity: edge.node.quantity,
+            rate: edge.node.cost.amount_per_quantity.amount.to_i,
+            description: edge.node.merchandise.product.title
+          }
+        end
+        # Compose description
+        description = "Order for #{params[:full_name]} (#{cart.lines.edges.size} items)"
+        expired_at = 1.day.from_now.iso8601
+        payment_response = Mayar::PaymentService.create_invoice(
+          name: params[:full_name],
+          email: params[:email],
+          mobile: phone,
+          redirect_url: checkout_success_url,
+          description: description,
+          expired_at: expired_at,
+          items: items
+        )
+        if payment_response && payment_response["payment_url"]
+          redirect_to payment_response["payment_url"] and return
+        else
+          redirect_to cart_path, alert: 'Could not create payment link. Please try again.' and return
+        end
       end
       # Call service to update cart buyer identity via Storefront API
       result = Shopify::StorefrontService.update_cart_buyer_identity(cart_id, buyer_identity)

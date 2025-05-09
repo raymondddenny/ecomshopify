@@ -301,60 +301,56 @@ module Shopify
     GRAPHQL
 
 
-    # Create a Shopify cart with a single line item
-    def self.create_cart(variant_id:, quantity: 1)
-      # Define the mutation inline to avoid constant issues
-      cart_create_mutation = <<~GRAPHQL
-        mutation($cartInput: CartInput!) {
-          cartCreate(input: $cartInput) {
-            cart {
-              id
-              checkoutUrl
-              lines(first: 10) {
-                edges {
-                  node {
-                    id
-                    merchandise {
-                      ... on ProductVariant {
-                        id
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            userErrors {
-              field
-              message
-            }
-          }
-        }
-      GRAPHQL
+    # CartCreate mutation as a constant (required by graphql-client)
+CartCreateMutation = Client.parse <<-'GRAPHQL'
+    mutation($cartInput: CartInput!) {
+      cartCreate(input: $cartInput) {
+      cart {
+      id
+    checkoutUrl
+    lines(first: 10) {
+    edges {
+      node {
+      id
+    merchandise {
+    ... on ProductVariant {
+      id
+    }
+    }
+    }
+    }
+    }
+    }
+    userErrors {
+    field
+    message
+    }
+    }
+    }
+GRAPHQL
 
-      # Parse the mutation at runtime
-      mutation = Client.parse(cart_create_mutation)
-
-      input = {
-        lines: [
-          {
-            quantity: quantity,
-            merchandiseId: variant_id
-          }
-        ]
+def self.create_cart(variant_id:, quantity: 1)
+  input = {
+      lines: [
+        {
+        quantity: quantity,
+          merchandiseId: variant_id
       }
+    ]
+    }
 
-      response = Client.query(mutation, variables: { cartInput: input })
+    response = Client.query(CartCreateMutation, variables: { cartInput: input })
 
-      if response.errors.any? || response.data&.cart_create&.cart.nil?
-        Rails.logger.error("Shopify cartCreate failed: #{response.errors&.messages}")
-        return nil
-      end
+    if response.errors.any? || response.data&.cart_create&.cart.nil?
+    Rails.logger.error("Shopify cartCreate failed: #{response.errors&.messages}")
+      return nil
+  end
 
-      {
-        cart_id: response.data.cart_create.cart.id,
-        checkout_url: response.data.cart_create.cart.checkout_url
-      }
-    end
+    {
+    cart_id: response.data.cart_create.cart.id,
+      checkout_url: response.data.cart_create.cart.checkout_url
+  }
+end
 
 
 # Add lines to an existing Shopify cart

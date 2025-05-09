@@ -16,7 +16,7 @@ class ShopifyCustomerSyncJob < ApplicationJob
       user.update(shopify_customer_id: shopify_customer.id)
       Rails.logger.info("Shopify customer sync succeeded for user #{user.email}")
     else
-      errors = shopify_customer&.customer_user_errors&.map(&:message)&.join(', ') if shopify_customer&.respond_to?(:customer_user_errors)
+      errors = shopify_customer&.customer_user_errors&.map(&:message)&.join(", ") if shopify_customer&.respond_to?(:customer_user_errors)
       Rails.logger.error("Shopify customer sync failed for user #{user.email}: #{errors}")
       # Optionally: retry or notify admin
     end

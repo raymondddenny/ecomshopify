@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  post '/mayar_webhooks/payment', to: 'mayar_webhooks#payment', as: :mayar_webhook_payment
+  get '/checkout/success', to: 'cart#checkout_success', as: :checkout_success
   get "checkout/new"
   get "checkout/create"
   resources :users, only: [:new, :create]
