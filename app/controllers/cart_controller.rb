@@ -2,6 +2,72 @@ class CartController < ApplicationController
   include CartSession
 
   def checkout_success
+    cart_id = session[:shopify_cart_id]
+    if cart_id.present?
+      cart = Shopify::StorefrontService.fetch_cart(cart_id)
+      if cart && cart.lines.edges.any?
+        # Build Shopify order payload from current cart
+        line_items = cart.lines.edges.map do |edge|
+          graphql_id = edge.node.merchandise.id.to_s
+          numeric_id = graphql_id.split("/").last
+          {
+            variant_id: numeric_id,
+            quantity: edge.node.quantity
+          }
+        end
+        # For customer info, fallback to session or use dummy/test data if not stored
+        # You should store these in session at checkout initiation for real deployment
+        customer_email = session[:checkout_email] || "test@example.com"
+        customer_name = session[:checkout_full_name] || "Test User"
+        address1 = session[:checkout_address1] || ""
+        city = session[:checkout_city] || ""
+        province = session[:checkout_province] || ""
+        country = session[:checkout_country] || ""
+        postal_code = session[:checkout_postal_code] || ""
+        phone = session[:checkout_phone] || ""
+        order_payload = {
+          order: {
+            email: customer_email,
+            line_items: line_items,
+            financial_status: "paid",
+            shipping_address: {
+              address1: address1,
+              city: city,
+              province: province,
+              country: country,
+              zip: postal_code,
+              name: customer_name,
+              phone: phone
+            }
+          }
+        }
+        order = Shopify::AdminService.create_order(order_payload)
+        if order
+          # Clear Shopify cart
+          line_ids = cart.lines.edges.map { |edge| edge.node.id }
+          Shopify::StorefrontService.remove_cart_lines(cart_id: cart_id, line_ids: line_ids) if line_ids.any?
+          # Clear session
+          session[:shopify_cart_id] = nil
+          session[:checkout_email] = nil
+          session[:checkout_full_name] = nil
+          session[:checkout_address1] = nil
+          session[:checkout_city] = nil
+          session[:checkout_province] = nil
+          session[:checkout_country] = nil
+          session[:checkout_postal_code] = nil
+          session[:checkout_phone] = nil
+          flash[:notice] = "Order created in Shopify and cart cleared."
+        else
+          flash[:alert] = "Order creation failed. Please contact support."
+        end
+      else
+        # Cart is empty or not found
+        session[:shopify_cart_id] = nil
+        flash[:alert] = "Cart is empty or not found."
+      end
+    else
+      flash[:alert] = "No cart found for checkout."
+    end
     render :checkout_success
   end
 
