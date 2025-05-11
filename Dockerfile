@@ -32,7 +32,6 @@ ENV BUNDLE_DEPLOYMENT="1" \
     RAILS_ENV="production"
 
 
-# Throw-away build stage to reduce size of final image
 FROM base AS build
 
 # Install packages needed to build gems and node modules
@@ -46,30 +45,35 @@ ENV PATH=/usr/local/node/bin:$PATH
 RUN curl -sL https://github.com/nodenv/node-build/archive/master.tar.gz | tar xz -C /tmp/ && \
     /tmp/node-build-master/bin/node-build "${NODE_VERSION}" /usr/local/node && \
     rm -rf /tmp/node-build-master
-
+    
+# Install Yarn package manager
+RUN npm install -g yarn
+    
 # Install application gems
 COPY Gemfile Gemfile.lock ./
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile --gemfile
-
-COPY package.json yarn.lock ./
+    
+# Copy all application code (including tailwind.config.js and input CSS)
+COPY . .
+    
+# Install node modules (now with all config present)
 RUN yarn install
 
-# Debug: List node_modules/.bin and yarn list tailwindcss
-RUN ls -l node_modules/.bin && yarn list --pattern tailwindcss
+# Download the standalone Tailwind CSS CLI (Linux x64)
+RUN curl -sSL https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 -o /usr/local/bin/tailwindcss \
+  && chmod +x /usr/local/bin/tailwindcss
     
+# Build Tailwind CSS
 RUN yarn build
+    
+# Precompile Rails assets
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
-
-# Copy application code
-COPY . .
-
-# Precompile bootsnap code for faster boot times
+    
+# Precompile bootsnap code for faster boot times (optional, after assets)
 RUN bundle exec bootsnap precompile app/ lib/
 
-# Build Tailwind CSS before precompiling assets
-RUN npm run build
 # Precompiling assets for production without requiring secret RAILS_MASTER_KEY
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 

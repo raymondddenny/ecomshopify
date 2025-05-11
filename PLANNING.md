@@ -60,12 +60,12 @@ Build a **headless Shopify storefront** using the latest **Ruby on Rails** and *
   - Mayar.id payment
 - **Order Creation** via Shopify Admin API (pending status supported, payment bypass possible) ✅
 
-### 💻 Landing Pages (Gumroad / Lynk.id Style)
-
-- Clean, minimal layout
-- Hero section with call-to-action
-- Testimonials
-- Modular, reusable sections
+### 🧾 Checkout & Order Flow (Update May 2025)
+- Checkout form collects customer and shipping info
+- Buyer identity is updated in Shopify cart
+- **On successful Mayar.id payment, Shopify order is now created and cart is cleared automatically** ✅
+- Robust error handling for order creation and cart clearing
+- All customer and address info is stored in session for order payload reconstruction
 
 ---
 
@@ -83,6 +83,7 @@ Build a **headless Shopify storefront** using the latest **Ruby on Rails** and *
   - Checkout form collects customer and shipping info.
   - Buyer identity is updated in Shopify cart.
   - Shopify order is created via Admin API with `pending` status (payment bypassed for now).
+  - **Now: On payment success, Shopify order is created with `paid` status and cart is cleared.**
 
 ---
 
@@ -92,6 +93,7 @@ Build a **headless Shopify storefront** using the latest **Ruby on Rails** and *
    - Integrate Mayar.id payment (redirect/iframe or widget).
    - On payment success, handle Mayar.id webhook and trigger Shopify Admin API order creation (idempotent, secure).
    - Store order/payment metadata for future reference.
+   - **Order creation and cart clearing on payment success is now implemented.**
 
 2. **Landing Page Enhancements**
    - Build modular hero, testimonial, and CTA sections using Tailwind.
@@ -103,6 +105,7 @@ Build a **headless Shopify storefront** using the latest **Ruby on Rails** and *
 
 4. **Deployment**
    - Prepare and test Fly.io deployment with secrets/configuration for Shopify and Mayar.id.
+   - **Next: Deploy updated app to Fly.io.**
 
 ---
 

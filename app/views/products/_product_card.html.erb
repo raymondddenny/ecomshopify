@@ -1,0 +1,16 @@
+<%= link_to product_path(product), class: "bg-white rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400" do %>
+  <div class="relative w-full aspect-square mb-4">
+    <% if product.images.edges.any? %>
+      <img src="<%= product.images.edges[0].node.url %>" alt="<%= (product.images.edges[0].node.respond_to?(:altText) && product.images.edges[0].node.altText.present?) ? product.images.edges[0].node.altText : product.title %>" class="object-cover w-full h-full rounded-lg" />
+    <% else %>
+      <div class="w-full h-full flex items-center justify-center bg-gray-100 rounded-lg text-gray-400">No Image</div>
+    <% end %>
+    <% if product.respond_to?(:sold_out?) && product.sold_out? %>
+      <span class="absolute top-2 left-2 bg-black text-white text-xs px-3 py-1 rounded-full">Sold out</span>
+    <% end %>
+  </div>
+  <div class="text-lg font-bold text-gray-900 mb-1"><%= product.title %></div>
+  <div class="text-md text-gray-700 mb-2">
+    <%= number_to_currency(product.price_range.min_variant_price.amount, unit: product.price_range.min_variant_price.currency_code) %>
+  </div>
+<% end %>
